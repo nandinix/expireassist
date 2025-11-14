@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./database');
+const path = require('path'); 
 
 const app = express();
 const PORT = 5000;
@@ -235,8 +236,7 @@ app.delete('/api/inventory/:id', (req, res) => {
   });
 });
 
-
-
+app.use('/pictures', express.static(path.join(__dirname, 'db', 'pictures')));
 
 
 app.listen(PORT, () => {
