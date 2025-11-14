@@ -31,13 +31,13 @@ app.get('/api/meals', (req, res) => {
     if (!meals || meals.length === 0) return cb(null, []);
     const mealIds = meals.map(m => m.id);
     const placeholders = mealIds.map(() => '?').join(',');
-    const sqlItems = `SELECT mi.meal_id, it.id as item_id, it.name FROM meal_items mi JOIN items it ON mi.item_id = it.id WHERE mi.meal_id IN (${placeholders})`;
+    const sqlItems = `SELECT mi.meal_id, it.* FROM meal_items mi JOIN items it ON mi.item_id = it.id WHERE mi.meal_id IN (${placeholders})`;
     db.all(sqlItems, mealIds, (err, rows) => {
       if (err) return cb(err);
       const map = {};
       rows.forEach(r => {
         map[r.meal_id] = map[r.meal_id] || [];
-        map[r.meal_id].push({ id: r.item_id, name: r.name });
+        map[r.meal_id].push({ id: r.id, name: r.name });
       });
       const out = meals.map(m => Object.assign({}, m, { items: map[m.id] || [] }));
       cb(null, out);
@@ -49,7 +49,7 @@ app.get('/api/meals', (req, res) => {
     if (!itemIds || itemIds.length === 0) return res.status(200).json([]);
     const placeholders = itemIds.map(() => '?').join(',');
     const sql = `
-      SELECT m.id, m.name, m.description,
+      SELECT m.*,
         COUNT(mi.item_id) AS total_items,
         SUM(CASE WHEN mi.item_id IN (${placeholders}) THEN 1 ELSE 0 END) AS matched_items
       FROM meals m
@@ -95,12 +95,12 @@ app.get('/api/meals', (req, res) => {
 
   if (!itemIdsParam) {
     // read active inventory item ids
-    db.all('SELECT DISTINCT item_id FROM inventory WHERE is_active = 1', (err, rows) => {
+    db.all('SELECT DISTINCT item_id FROM inventory', (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       const itemIds = (rows || []).map(r => r.item_id).filter(n => Number.isFinite(n));
       if (!itemIds || itemIds.length === 0) {
         // fallback: return all meals with items
-        return db.all('SELECT id, name, description FROM meals ORDER BY name;', (err2, meals) => {
+        return db.all('SELECT * FROM meals ORDER BY name;', (err2, meals) => {
           if (err2) return res.status(500).json({ error: err2.message });
           attachItemsToMeals(meals, (err3, mealsWithItems) => {
             if (err3) return res.status(500).json({ error: err3.message });
@@ -125,7 +125,7 @@ app.get('/api/meals', (req, res) => {
 // List inventory with item details
 app.get('/api/inventory', (req, res) => {
   const sql = `
-    SELECT i.id, i.item_id, it.name AS item_name, it.shelf_life_days, i.acquired_at, i.expiry_date, i.cost, i.quantity, i.unit, i.bin_name, i.notes, i.is_active
+    SELECT i.*, it.name AS item_name, it.shelf_life_days, it.photo_path AS item_photo_path
     FROM inventory i
     LEFT JOIN items it ON i.item_id = it.id
     ORDER BY i.id DESC
@@ -139,7 +139,7 @@ app.get('/api/inventory', (req, res) => {
 // Get inventory item by id
 app.get('/api/inventory/:id', (req, res) => {
   const sql = `
-    SELECT i.id, i.item_id, it.name AS item_name, it.shelf_life_days, i.acquired_at, i.expiry_date, i.cost, i.quantity, i.unit, i.bin_name, i.notes, i.is_active
+    SELECT i.*, it.name AS item_name, it.shelf_life_days, it.photo_path AS item_photo_path
     FROM inventory i
     LEFT JOIN items it ON i.item_id = it.id
     WHERE i.id = ?
@@ -153,16 +153,23 @@ app.get('/api/inventory/:id', (req, res) => {
 
 // Create inventory item
 app.post('/api/inventory', (req, res) => {
-  const { item_id, item_name, expiry_date, cost, quantity, unit, bin_name, notes } = req.body || {};
+  const { item_id, item_name, expiry_date, quantity } = req.body || {};
 
-  // Helper: resolve or create item by name
+  // Helper: resolve or create item by id or name
   const ensureItem = (cb) => {
-    if (item_id) return cb(null, item_id);
+    if (item_id) {
+      // verify that item exists
+      return db.get('SELECT id FROM items WHERE id = ?', [item_id], (err, row) => {
+        if (err) return cb(err);
+        if (!row) return cb(new Error('item_id not found'));
+        return cb(null, row.id);
+      });
+    }
     if (!item_name) return cb(new Error('item_id or item_name required'));
     db.get('SELECT id FROM items WHERE name = ?', [item_name], (err, row) => {
       if (err) return cb(err);
       if (row) return cb(null, row.id);
-      // create item with no category/shelf_life
+      // create item with only the name (other columns optional)
       db.run('INSERT INTO items (name) VALUES (?)', [item_name], function (err) {
         if (err) return cb(err);
         cb(null, this.lastID);
@@ -173,9 +180,9 @@ app.post('/api/inventory', (req, res) => {
   ensureItem((err, resolvedItemId) => {
     if (err) return res.status(400).json({ error: err.message });
 
-    // if expiry_date not provided, try to compute from shelf_life_days
+    // if expiry_date not provided, compute from shelf_life_days if available
     if (expiry_date) {
-      insertInventory(resolvedItemId, expiry_date);
+      insertInventory(resolvedItemId, expiry_date, quantity);
     } else {
       db.get('SELECT shelf_life_days FROM items WHERE id = ?', [resolvedItemId], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -185,13 +192,14 @@ app.post('/api/inventory', (req, res) => {
           d.setDate(d.getDate() + row.shelf_life_days);
           expiry = d.toISOString();
         }
-        insertInventory(resolvedItemId, expiry);
+        insertInventory(resolvedItemId, expiry, quantity);
       });
     }
 
-    function insertInventory(resolvedItemId, expiry) {
-      const sql = `INSERT INTO inventory (item_id, expiry_date, cost, quantity, unit, bin_name, notes) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-      db.run(sql, [resolvedItemId, expiry, cost || null, quantity || 1, unit || null, bin_name || null, notes || null], function (err) {
+    function insertInventory(resolvedItemId, expiry, quantityValue) {
+      const qty = (typeof quantityValue === 'undefined' || quantityValue === null) ? 1 : quantityValue;
+      const sql = `INSERT INTO inventory (item_id, expiry_date, quantity) VALUES (?, ?, ?)`;
+      db.run(sql, [resolvedItemId, expiry, qty], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         db.get('SELECT * FROM inventory WHERE id = ?', [this.lastID], (err, row) => {
           if (err) return res.status(500).json({ error: err.message });
@@ -205,9 +213,9 @@ app.post('/api/inventory', (req, res) => {
 // Update inventory item
 app.put('/api/inventory/:id', (req, res) => {
   const id = req.params.id;
-  const { expiry_date, cost, quantity, unit, bin_name, notes, is_active } = req.body || {};
-  const sql = `UPDATE inventory SET expiry_date = COALESCE(?, expiry_date), cost = COALESCE(?, cost), quantity = COALESCE(?, quantity), unit = COALESCE(?, unit), bin_name = COALESCE(?, bin_name), notes = COALESCE(?, notes), is_active = COALESCE(?, is_active) WHERE id = ?`;
-  db.run(sql, [expiry_date || null, cost || null, quantity || null, unit || null, bin_name || null, notes || null, typeof is_active === 'undefined' ? null : is_active, id], function (err) {
+  const { expiry_date, quantity } = req.body || {};
+  const sql = `UPDATE inventory SET expiry_date = COALESCE(?, expiry_date), quantity = COALESCE(?, quantity) WHERE id = ?`;
+  db.run(sql, [expiry_date || null, typeof quantity === 'undefined' ? null : quantity, id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Inventory item not found' });
     db.get('SELECT * FROM inventory WHERE id = ?', [id], (err, row) => {
