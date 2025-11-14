@@ -49,7 +49,7 @@ test_inventory() {
 
   echo "2) POST /api/inventory (create a test item)"
   local POST_PAYLOAD
-  POST_PAYLOAD='{"item_name":"Test CLI Item","quantity":2,"expiry_date":"2024-12-31"}'
+  POST_PAYLOAD='{"item_id":1,"quantity":2,"expiry_date":"2024-12-31"}'
   do_request POST "$BASE_URL/api/inventory" "$POST_PAYLOAD"
   if [ "$code" -ne 201 ]; then
     echo "POST /api/inventory failed with HTTP $code" >&2
