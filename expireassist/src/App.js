@@ -205,6 +205,28 @@ function App() {
     });
   }
 
+  function addMissingItemsToCart(meal) {
+    if (!meal.missing_item_names || meal.missing_item_names.length === 0) {
+      return;
+    }
+    
+    setOrderQuantities((prev) => {
+      const copy = { ...prev };
+      
+      // Find item IDs for missing items by name
+      meal.missing_item_names.forEach((missingName) => {
+        const foundItem = items.find((it) => it.name === missingName);
+        if (foundItem) {
+          const idStr = String(foundItem.id);
+          const current = copy[idStr] || 0;
+          copy[idStr] = current + 1;
+        }
+      });
+      
+      return copy;
+    });
+  }
+
   function totalOrderCount(orderMap) {
     return Object.values(orderMap).reduce((sum, q) => sum + q, 0);
   }
@@ -236,6 +258,30 @@ function App() {
     } catch (err) {
       console.error(err);
       setError('Failed to add new items to your pantry.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
+  async function handleMarkUsed() {
+    if (!selectedPantryIds.length) return;
+
+    setCheckoutLoading(true); // reuse loading state
+    setError('');
+
+    try {
+      for (const inventoryId of selectedPantryIds) {
+        await fetch(`${API_BASE}/api/inventory/${inventoryId}`, {
+          method: 'DELETE',
+        });
+      }
+
+      // reload inventory & clear selections
+      await loadInventory();
+      setSelectedPantryIds([]);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to remove items from inventory.');
     } finally {
       setCheckoutLoading(false);
     }
@@ -365,6 +411,19 @@ function App() {
                 <li className="Pantry-empty">No items match this category.</li>
               )}
             </ul>
+
+            <footer className="Pantry-footer">
+              <button
+                type="button"
+                className="Primary-button"
+                onClick={handleMarkUsed}
+                disabled={
+                  checkoutLoading || selectedPantryIds.length === 0
+                }
+              >
+                {checkoutLoading ? 'Removing from pantry…' : 'Remove selected items from pantry'}
+              </button>
+            </footer>
           </section>
 
           {/* CENTER: New items (shopping aisle) */}
@@ -524,6 +583,7 @@ function App() {
             <ul className="Meal-list">
               {meals.map((meal) => {
                 const matchPct = Math.round((meal.score || 0) * 100);
+                const hasMissingItems = meal.missing_item_names && meal.missing_item_names.length > 0;
                 return (
                   <li key={meal.id}>
                     <article className="Meal-card">
@@ -542,15 +602,25 @@ function App() {
                             ? meal.matched_item_names.join(', ')
                             : '—'}
                         </p>
-                        {meal.missing_item_names &&
-                          meal.missing_item_names.length > 0 && (
+                        {hasMissingItems && (
+                          <div>
                             <p className="Meal-missing">
                               Missing:{' '}
                               <span>
                                 {meal.missing_item_names.join(', ')}
                               </span>
                             </p>
-                          )}
+                            <br></br>
+                            <button
+                              type="button"
+                              className="Primary-button"
+                              onClick={() => addMissingItemsToCart(meal)}
+                              aria-label={`Add missing items for ${meal.name} to cart`}
+                            >
+                              + Add missing items to cart
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </article>
                   </li>
