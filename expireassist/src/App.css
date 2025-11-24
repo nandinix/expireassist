@@ -4,12 +4,15 @@
   box-sizing: border-box;
 }
 
+body {
+  margin: 0;
+}
+
 .App {
   min-height: 100vh;
   background: radial-gradient(circle at top left, #283e6b 0, #050818 55%);
   color: #f9fafb;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   display: flex;
   flex-direction: column;
 }
@@ -25,7 +28,24 @@
   color: #e5e7eb;
 }
 
-/* ----- Header ----- */
+.Skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  background: #ffffff;
+  color: #000000;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 0.15s ease;
+  z-index: 50;
+}
+
+.Skip-link:focus {
+  transform: translateY(0);
+}
 
 .App-header {
   border-bottom: 1px solid rgba(148, 163, 184, 0.3);
@@ -66,6 +86,17 @@
   color: #cbd5f5;
 }
 
+.App-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.App-accessibility {
+  display: flex;
+  align-items: center;
+}
+
 .App-nav {
   display: flex;
   gap: 0.75rem;
@@ -88,7 +119,21 @@
   outline: none;
 }
 
-/* ----- Main layout ----- */
+.Secondary-button {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.9);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.Secondary-button:hover,
+.Secondary-button:focus-visible {
+  border-color: #38bdf8;
+  outline: none;
+}
 
 .App-main {
   flex: 1;
@@ -111,15 +156,10 @@
   width: calc(100% - 3rem);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(260px, 1.05fr) minmax(420px, 1.5fr) minmax(
-      280px,
-      1.1fr
-    );
+  grid-template-columns: minmax(260px, 1.05fr) minmax(420px, 1.5fr) minmax(280px, 1.1fr);
   gap: 1.5rem;
   align-items: flex-start;
 }
-
-/* ----- Shared panel styles ----- */
 
 .Panel {
   background: radial-gradient(circle at top, #0f172a 0, #020617 70%);
@@ -174,8 +214,6 @@
   gap: 0.75rem;
   margin-top: 0.2rem;
 }
-
-/* ----- Form / chips / tags ----- */
 
 .Field {
   display: inline-flex;
@@ -256,8 +294,6 @@
   background: rgba(22, 163, 74, 0.15);
   border: 1px solid rgba(45, 212, 191, 0.7);
 }
-
-/* ----- Pantry (left column) ----- */
 
 .Pantry-list {
   list-style: none;
@@ -340,7 +376,9 @@
   padding-top: 0.4rem;
 }
 
-/* ----- New items / middle "aisle" ----- */
+.Panel .Pantry-footer {
+  margin-top: 0.75rem;
+}
 
 .Shelf-grid {
   margin-top: 0.75rem;
@@ -453,8 +491,6 @@
   color: #cbd5f5;
 }
 
-/* Checkout bar */
-
 .Checkout-bar {
   margin-top: 0.85rem;
   padding-top: 0.5rem;
@@ -489,8 +525,6 @@
   filter: brightness(1.05);
   outline: none;
 }
-
-/* ----- Meals (right column) ----- */
 
 .Meal-loading,
 .Meal-empty {
@@ -552,15 +586,13 @@
   color: #fed7aa;
 }
 
-/* ----- Responsive tweaks ----- */
-
 @media (max-width: 1200px) {
   .App-layout {
     grid-template-columns: minmax(260px, 1.1fr) minmax(0, 1.5fr);
     grid-template-rows: auto auto;
     grid-template-areas:
-      'pantry new'
-      'meals new';
+      "pantry new"
+      "meals new";
   }
 
   .Panel--pantry {
@@ -583,7 +615,203 @@
     gap: 0.5rem;
   }
 
+  .App-header-right {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
   .App-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.App--high-contrast {
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.App--high-contrast .App-main {
+  background: #e5e7eb;
+}
+
+.App--high-contrast .App-header {
+  background: #ffffff;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.App--high-contrast .App-brand h1,
+.App--high-contrast .App-brand p {
+  color: #111827;
+}
+
+.App--high-contrast .Panel {
+  background: #ffffff;
+  color: #111827;
+  border-color: #d1d5db;
+  box-shadow: none;
+}
+
+.App--high-contrast .Panel-header h2 {
+  font-size: 1.3rem;
+}
+
+.App--high-contrast .Panel-header p {
+  font-size: 1rem;
+  color: #374151;
+}
+
+.App--high-contrast .Pantry-name,
+.App--high-contrast .Shelf-text h3,
+.App--high-contrast .Meal-card-header h3 {
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.App--high-contrast .Pantry-meta,
+.App--high-contrast .Shelf-meta,
+.App--high-contrast .Meal-body,
+.App--high-contrast .Meal-score,
+.App--high-contrast .Pantry-empty,
+.App--high-contrast .Shelf-empty {
+  color: #374151;
+  font-size: 1rem;
+}
+
+.App--high-contrast .Meal-loading,
+.App--high-contrast .Meal-empty {
+  color: #374151;
+  font-size: 1rem;
+}
+
+.App--high-contrast .Meal-missing {
+  color: #b45309;
+}
+
+.App--high-contrast .Meal-missing span {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.App--high-contrast .App-nav a {
+  background: transparent;
+  color: #111827;
+  border-color: transparent;
+  font-size: 1rem;
+}
+
+.App--high-contrast .App-nav a:hover,
+.App--high-contrast .App-nav a:focus-visible {
+  border-color: #005fcc;
+}
+
+.App--high-contrast .Field select {
+  background: #ffffff;
+  color: #111827;
+  border-color: #4b5563;
+  font-size: 1rem;
+}
+
+.App--high-contrast .Tag {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.App--high-contrast .Tag--accent {
+  background: #005fcc;
+  border-color: #005fcc;
+  color: #ffffff;
+}
+
+.App--high-contrast .Chip {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d4d4d4;
+  font-size: 1rem;
+  padding: 0.6rem 1.1rem;
+}
+
+.App--high-contrast .Chip--accent {
+  background: #005fcc;
+  color: #ffffff;
+  border-color: #005fcc;
+}
+
+.App--high-contrast .Pantry-row,
+.App--high-contrast .Shelf-card,
+.App--high-contrast .Meal-card {
+  background: #ffffff;
+  border-color: #d1d5db;
+  min-height: 3.2rem;
+}
+
+.App--high-contrast .Pantry-row--selected,
+.App--high-contrast .Shelf-card--selected {
+  background: #e5f1ff;
+  border-color: #005fcc;
+  box-shadow: 0 0 0 3px #bfdbfe;
+}
+
+.App--high-contrast .Primary-button,
+.App--high-contrast .Secondary-button {
+  font-size: 1rem;
+  padding: 0.85rem 1.8rem;
+  min-height: 3.2rem;
+}
+
+.App--high-contrast .Primary-button {
+  background: #005fcc;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.App--high-contrast .Primary-button:disabled {
+  background: #9ca3af;
+  color: #f9fafb;
+}
+
+.App--high-contrast .Secondary-button {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #4b5563;
+}
+
+.App--high-contrast .Stepper {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  padding: 0.5rem 0.9rem;
+}
+
+.App--high-contrast .Stepper button {
+  background: #111827;
+  color: #ffffff;
+  font-size: 1.4rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+}
+
+.App--high-contrast .Stepper button:disabled {
+  opacity: 0.45;
+}
+
+.App--high-contrast .Stepper span {
+  min-width: 2.2rem;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.App--high-contrast .App-error {
+  background: #fee2e2;
+  border-color: #b91c1c;
+  color: #7f1d1d;
+}
+
+.App--high-contrast :focus-visible {
+  outline: 3px solid #f97316;
+  outline-offset: 3px;
 }
