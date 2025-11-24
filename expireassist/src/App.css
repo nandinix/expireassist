@@ -8,6 +8,19 @@ body {
   margin: 0;
 }
 
+/* Visually hidden utility for screen reader only content */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .App {
   min-height: 100vh;
   background: radial-gradient(circle at top left, #283e6b 0, #050818 55%);
@@ -37,14 +50,18 @@ body {
   color: #000000;
   border-radius: 999px;
   font-size: 0.85rem;
+  font-weight: 600;
   text-decoration: none;
   transform: translateY(-200%);
   transition: transform 0.15s ease;
-  z-index: 50;
+  z-index: 100;
+  border: 2px solid #000000;
 }
 
 .Skip-link:focus {
   transform: translateY(0);
+  outline: 3px solid #f97316;
+  outline-offset: 2px;
 }
 
 .App-header {
@@ -116,7 +133,8 @@ body {
 .App-nav a:hover,
 .App-nav a:focus-visible {
   border-color: #38bdf8;
-  outline: none;
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .Secondary-button {
@@ -132,7 +150,8 @@ body {
 .Secondary-button:hover,
 .Secondary-button:focus-visible {
   border-color: #38bdf8;
-  outline: none;
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .App-main {
@@ -234,8 +253,9 @@ body {
 }
 
 .Field select:focus-visible {
-  outline: 2px solid #38bdf8;
-  outline-offset: 1px;
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+  border-color: #38bdf8;
 }
 
 .Field-label {
@@ -265,7 +285,8 @@ body {
 .Chip:hover,
 .Chip:focus-visible {
   border-color: #38bdf8;
-  outline: none;
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .Chip--active {
@@ -322,7 +343,8 @@ body {
 .Pantry-row:hover,
 .Pantry-row:focus-visible {
   border-color: #38bdf8;
-  outline: none;
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .Pantry-row--selected {
@@ -476,7 +498,8 @@ body {
 .Stepper button:focus-visible:not(:disabled) {
   background: rgba(37, 99, 235, 0.4);
   border-radius: 999px;
-  outline: none;
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
 }
 
 .Stepper span {
@@ -523,7 +546,8 @@ body {
 .Primary-button:hover:not(:disabled),
 .Primary-button:focus-visible:not(:disabled) {
   filter: brightness(1.05);
-  outline: none;
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .Meal-loading,
@@ -705,6 +729,8 @@ body {
 .App--high-contrast .App-nav a:hover,
 .App--high-contrast .App-nav a:focus-visible {
   border-color: #005fcc;
+  outline: 3px solid #005fcc;
+  outline-offset: 2px;
 }
 
 .App--high-contrast .Field select {

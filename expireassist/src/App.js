@@ -330,13 +330,13 @@ function App() {
         Skip to main content
       </a>
 
-      <header className="App-header">
+      <header className="App-header" role="banner">
         <div className="App-header-inner">
           <div className="App-brand">
-            <span className="App-logo-dot" aria-hidden="true" />
+            <span className="App-logo-dot" aria-hidden="true" role="presentation" />
             <div>
-              <h1>ExpireAssist</h1>
-              <p>Use what you have. Waste less food.</p>
+              <h1 id="site-title">ExpireAssist</h1>
+              <p aria-label="Tagline">Use what you have. Waste less food.</p>
             </div>
           </div>
 
@@ -357,16 +357,16 @@ function App() {
               </button>
             </div>
 
-            <nav className="App-nav" aria-label="Sections">
-              <a href="#pantry-column">Pantry</a>
-              <a href="#new-items-column">New items</a>
-              <a href="#meals-column">Meal ideas</a>
+            <nav className="App-nav" role="navigation" aria-label="Quick navigation to main sections">
+              <a href="#pantry-column" aria-label="Jump to your pantry section">Pantry</a>
+              <a href="#new-items-column" aria-label="Jump to new items section">New items</a>
+              <a href="#meals-column" aria-label="Jump to meal ideas section">Meal ideas</a>
             </nav>
           </div>
         </div>
       </header>
 
-      <main id="main-content" className="App-main" aria-label="Grocery layout">
+      <main id="main-content" className="App-main" role="main" aria-label="Pantry management dashboard">
         {error && (
           <div className="App-error" role="alert">
             {error}
@@ -374,18 +374,20 @@ function App() {
         )}
 
         <section className="App-layout">
-          <section id="pantry-column" className="Panel Panel--pantry" aria-label="Your pantry">
+          <section id="pantry-column" className="Panel Panel--pantry" aria-labelledby="pantry-heading" role="region">
             <header className="Panel-header">
-              <h2>Your pantry</h2>
-              <p>Soonest to expire at the top. Select items you want to include in meal ideas.</p>
+              <h2 id="pantry-heading">Your pantry</h2>
+              <p aria-describedby="pantry-heading">Soonest to expire at the top. Select items you want to include in meal ideas.</p>
             </header>
 
             <div className="Panel-controls">
               <label className="Field">
-                <span className="Field-label">Category</span>
+                <span className="Field-label" id="pantry-category-label">Category</span>
                 <select
                   value={pantryCategoryFilter}
                   onChange={(e) => setPantryCategoryFilter(e.target.value)}
+                  aria-labelledby="pantry-category-label"
+                  aria-describedby="pantry-heading"
                 >
                   {allCategories.map((cat) => (
                     <option key={cat} value={cat}>
@@ -396,7 +398,7 @@ function App() {
               </label>
             </div>
 
-            <ul className="Pantry-list">
+            <ul className="Pantry-list" role="list" aria-label="Pantry items list" aria-live="polite">
               {pantryFiltered.map((row) => {
                 const isSelected =
                   row.inventoryIds && row.inventoryIds.length
@@ -417,6 +419,7 @@ function App() {
                       className={'Pantry-row' + (isSelected ? ' Pantry-row--selected' : '')}
                       onClick={handlePantryClick}
                       aria-pressed={isSelected}
+                      aria-label={`${row.item_name}, ${row.category}, quantity ${row.quantity}, expires ${formatDate(row.expiry_date)}. ${isSelected ? 'Selected' : 'Not selected'}. Press to ${isSelected ? 'deselect' : 'select'}.`}
                     >
                       <div className="Pantry-row-left">
                         {img && (
@@ -441,7 +444,7 @@ function App() {
                 );
               })}
               {pantryFiltered.length === 0 && (
-                <li className="Pantry-empty">No items match this category.</li>
+                <li className="Pantry-empty" role="status" aria-live="polite">No items match this category.</li>
               )}
             </ul>
 
@@ -451,6 +454,8 @@ function App() {
                 className="Primary-button"
                 onClick={handleMarkUsed}
                 disabled={checkoutLoading || selectedPantryIds.length === 0}
+                aria-label={`Remove ${selectedPantryIds.length} selected item${selectedPantryIds.length === 1 ? '' : 's'} from pantry`}
+                aria-live="polite"
               >
                 {checkoutLoading ? 'Removing from pantry…' : 'Remove selected items from pantry'}
               </button>
@@ -460,23 +465,24 @@ function App() {
           <section
             id="new-items-column"
             className="Panel Panel--new"
-            aria-label="New items to add"
+            aria-labelledby="new-items-heading"
+            role="region"
           >
             <header className="Panel-header Panel-header--split">
               <div>
-                <h2>New items</h2>
+                <h2 id="new-items-heading">New items</h2>
                 <p>
                   Browse the aisles and build your basket. Selected items will be added to your
                   pantry with an estimated expiration date.
                 </p>
               </div>
-              <div className="Tag Tag--accent" aria-live="polite">
+              <div className="Tag Tag--accent" aria-live="polite" aria-atomic="true" role="status">
                 {totalOrderCount(orderQuantities)} item
                 {totalOrderCount(orderQuantities) === 1 ? '' : 's'} in basket
               </div>
             </header>
 
-            <div className="Chips-row" aria-label="Filter items by aisle">
+            <div className="Chips-row" role="group" aria-label="Filter items by aisle or category">
               {allCategories.map((cat) => {
                 const selected = newItemsCategory === cat;
                 return (
@@ -486,6 +492,7 @@ function App() {
                     className={'Chip' + (selected ? ' Chip--active Chip--accent' : '')}
                     onClick={() => setNewItemsCategory(cat)}
                     aria-pressed={selected}
+                    aria-label={`Filter by ${cat === 'All' ? 'all aisles' : cat + ' category'}. ${selected ? 'Currently selected' : 'Not selected'}`}
                   >
                     {cat === 'All' ? 'All aisles' : cat}
                   </button>
@@ -493,7 +500,7 @@ function App() {
               })}
             </div>
 
-            <div className="Shelf-grid">
+            <div className="Shelf-grid" role="list" aria-label="Available items to add to basket">
               {newItemsFiltered.map((item) => {
                 const qty = orderQuantities[String(item.id)] || 0;
                 const img = photoUrl(item.photo_path);
@@ -501,12 +508,13 @@ function App() {
                   <article
                     key={item.id}
                     className={'Shelf-card' + (qty > 0 ? ' Shelf-card--selected' : '')}
-                    aria-label={item.name}
+                    role="listitem"
+                    aria-label={`${item.name}, ${item.category}, shelf life ${item.shelf_life_days ? item.shelf_life_days + ' days' : 'unknown'}. ${qty > 0 ? qty + ' in basket' : 'Not in basket'}`}
                   >
                     <div className="Shelf-card-top">
                       {img && <img src={img} alt={item.name} className="Shelf-thumb" />}
                       <div className="Shelf-text">
-                        <h3>{item.name}</h3>
+                        <h3 id={`item-name-${item.id}`}>{item.name}</h3>
                         <p className="Shelf-meta">
                           <span className="Tag">{item.category}</span>
                           <span>
@@ -521,7 +529,7 @@ function App() {
                       <span className="Shelf-qty-label" id={`qty-${item.id}`}>
                         Quantity
                       </span>
-                      <div className="Stepper" aria-labelledby={`qty-${item.id}`}>
+                      <div className="Stepper" role="group" aria-labelledby={`qty-${item.id}`} aria-describedby={`item-name-${item.id}`}>
                         <button
                           type="button"
                           onClick={() => adjustOrderQuantity(item.id, -1)}
@@ -530,7 +538,7 @@ function App() {
                         >
                           −
                         </button>
-                        <span aria-live="polite">{qty}</span>
+                        <span aria-live="polite" aria-atomic="true" role="status">{qty}</span>
                         <button
                           type="button"
                           onClick={() => adjustOrderQuantity(item.id, 1)}
@@ -544,12 +552,12 @@ function App() {
                 );
               })}
               {newItemsFiltered.length === 0 && (
-                <p className="Shelf-empty">No items in this aisle yet. Try a different category.</p>
+                <p className="Shelf-empty" role="status" aria-live="polite">No items in this aisle yet. Try a different category.</p>
               )}
             </div>
 
             <footer className="Checkout-bar">
-              <div aria-live="polite">
+              <div aria-live="polite" aria-atomic="true" role="status">
                 <strong>Basket:</strong> {totalOrderCount(orderQuantities)} item
                 {totalOrderCount(orderQuantities) === 1 ? '' : 's'} selected
               </div>
@@ -558,37 +566,38 @@ function App() {
                 className="Primary-button"
                 onClick={handleCheckout}
                 disabled={checkoutLoading || totalOrderCount(orderQuantities) === 0}
+                aria-label={`Add ${totalOrderCount(orderQuantities)} item${totalOrderCount(orderQuantities) === 1 ? '' : 's'} from basket to pantry`}
               >
                 {checkoutLoading ? 'Adding to pantry…' : 'Add items to pantry'}
               </button>
             </footer>
           </section>
 
-          <section id="meals-column" className="Panel Panel--meals" aria-label="Meal ideas">
+          <section id="meals-column" className="Panel Panel--meals" aria-labelledby="meals-heading" role="region">
             <header className="Panel-header">
-              <h2>Meal ideas</h2>
+              <h2 id="meals-heading">Meal ideas</h2>
               <p>Select items on the left and center to see recipes that use as much of your food as possible.</p>
             </header>
 
-            {mealLoading && <p className="Meal-loading">Updating suggestions…</p>}
+            {mealLoading && <p className="Meal-loading" role="status" aria-live="polite">Updating suggestions…</p>}
 
             {!mealLoading && meals.length === 0 && (
-              <p className="Meal-empty">
+              <p className="Meal-empty" role="status" aria-live="polite">
                 Select at least one pantry item or new item to see suggested meals.
               </p>
             )}
 
-            <ul className="Meal-list">
+            <ul className="Meal-list" role="list" aria-label="Suggested meals based on selected items">
               {meals.map((meal) => {
                 const matchPct = Math.round((meal.score || 0) * 100);
                 const hasMissingItems =
                   meal.missing_item_names && meal.missing_item_names.length > 0;
                 return (
-                  <li key={meal.id}>
-                    <article className="Meal-card">
+                  <li key={meal.id} role="listitem">
+                    <article className="Meal-card" aria-labelledby={`meal-name-${meal.id}`}>
                       <header className="Meal-card-header">
-                        <h3>{meal.name}</h3>
-                        <span className="Meal-score">
+                        <h3 id={`meal-name-${meal.id}`}>{meal.name}</h3>
+                        <span className="Meal-score" aria-label={`${matchPct} percent match, uses ${meal.matched_items} of ${meal.total_items} items`}>
                           {matchPct}% match • uses {meal.matched_items} of {meal.total_items} items
                         </span>
                       </header>
@@ -609,7 +618,7 @@ function App() {
                               type="button"
                               className="Primary-button"
                               onClick={() => addMissingItemsToCart(meal)}
-                              aria-label={`Add missing items for ${meal.name} to cart`}
+                              aria-label={`Add missing items for ${meal.name} to basket: ${meal.missing_item_names.join(', ')}`}
                             >
                               + Add missing items to cart
                             </button>
